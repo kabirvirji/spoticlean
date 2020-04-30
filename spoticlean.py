@@ -1,0 +1,47 @@
+import argparse
+import requests
+import json
+import re
+import sys
+import itertools
+
+parser = argparse.ArgumentParser(description='Clean up Spotify playlists')
+parser.add_argument("-r", "--regex", required=True, help="Regular Expression")
+parser.add_argument("-t", "--token", required=True, help="Spotify Bearer Token")
+args = vars(parser.parse_args())
+regex, token = args['regex'], args['token']
+
+auth_header = {"Authorization": "Bearer " + token}
+get_id = requests.get("https://api.spotify.com/v1/me", headers=auth_header)
+
+if get_id.ok:
+    id = json.loads(get_id.text)["id"]
+else:
+    print("\n\tInvalid Spotify Token. Generate a token here: https://developer.spotify.com/console/delete-playlist-followers/")
+    sys.exit()
+
+url = "https://api.spotify.com/v1/me/playlists?limit=50"
+playlists_to_delete, playlist_names = [], []
+while True:
+    get_playlists = requests.get(url, headers=auth_header)
+    playlists = json.loads(get_playlists.text)["items"]
+    nxt = json.loads(get_playlists.text)["next"]    
+    for playlist in playlists:
+        match = re.match(regex, playlist["name"])
+        if match:
+            playlists_to_delete.append(playlist["id"])
+            playlist_names.append(playlist["name"])
+    if nxt is not None:
+        url = nxt
+    else:
+        break
+
+if playlists_to_delete:
+    print("\nFound the following playlists:\n")
+    for name in playlist_names:
+        print("\t- " + name)
+    input("\nPress enter to delete (unfollow) playlists ")
+    for playlist_id in playlists_to_delete:
+        requests.delete("https://api.spotify.com/v1/playlists/" + playlist_id + "/followers", headers=auth_header)
+else:
+    print("\n\tNo playlists match that search!")
