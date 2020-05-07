@@ -1,8 +1,8 @@
 from setuptools import setup, find_packages
 
 setup(
-	name='spoticlean-1',
-	version='0.0.8',
+	name='spoticlean',
+	version='0.1.0',
 	license="MIT",
 	description='Delete Spotify playlists using RegEx',
 	url="https://github.com/kabirvirji/spoticlean",
